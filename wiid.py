@@ -34,19 +34,20 @@ class Daemon():
         self.wiimote  = None
         self.poller   = poll()
         self.bindings = [
-                {"name": "Left",  "code":0,  "action": self.send_keys,  "args":["Left"],           "modifier_action":self.dummy,     "modifier_args":[]},
+                {"name": "Left",  "code":0,  "action": self.send_keys,  "args":["Left"],           "modifier_action":self.send_keys, "modifier_args":["F5"]},
                 {"name": "Right", "code":1,  "action": self.send_keys,  "args":["Right"],          "modifier_action":self.dummy,     "modifier_args":[]},
-                {"name": "Up",    "code":2,  "action": self.send_keys,  "args":["Up"],             "modifier_action":self.dummy,     "modifier_args":[]},
-                {"name": "Down",  "code":3,  "action": self.send_keys,  "args":["Down"],           "modifier_action":self.send_keys, "modifier_args":["F5"]},
 
-                {"name": "A",     "code":4,  "action": self.send_click, "args":["hold", "1"], "action_up":self.send_click, "args_up":["release", "1"], "modifier_action":self.send_keys, "modifier_args":["ctrl+w"]}, 
+                {"name": "Up",    "code":2,  "action": self.send_keys,  "args":["Up",   "hold"], "action_up":self.send_keys,  "args_up":["Up",   "release"], "modifier_action":self.dummy,     "modifier_args":[]},
+                {"name": "Down",  "code":3,  "action": self.send_keys,  "args":["Down", "hold"], "action_up":self.send_keys,  "args_up":["Down", "release"], "modifier_action":self.dummy,     "modifier_args":[]},
+                {"name": "A",     "code":4,  "action": self.send_click, "args":["1",    "hold"], "action_up":self.send_click, "args_up":["1",    "release"], "modifier_action":self.send_keys, "modifier_args":["ctrl+w"]}, 
 
                 {"name": "B",     "code":5,  "action": "modifier"},
+
                 {"name": "Plus",  "code":6,  "action": self.send_keys,  "args":["ctrl+Page_Down"], "modifier_action":self.send_keys, "modifier_args":["XF86AudioRaiseVolume"]},
                 {"name": "Minus", "code":7,  "action": self.send_keys,  "args":["ctrl+Page_Up"],   "modifier_action":self.send_keys, "modifier_args":["XF86AudioLowerVolume"]},
                 {"name": "Home",  "code":8,  "action": self.send_keys,  "args":["ctrl+alt+Down"],  "modifier_action":self.dummy,     "modifier_args":[]},
-                {"name": "1",     "code":9,  "action": self.send_click, "args":["click", "2"],     "modifier_action":self.dummy,     "modifier_args":[]},
-                {"name": "2",     "code":10, "action": self.send_click, "args":["click", "3"],     "modifier_action":self.dummy,     "modifier_args":[]},
+                {"name": "1",     "code":9,  "action": self.send_click, "args":["2"],              "modifier_action":self.dummy,     "modifier_args":[]},
+                {"name": "2",     "code":10, "action": self.send_click, "args":["3"],              "modifier_action":self.dummy,     "modifier_args":[]},
                 ]
 
         '''
@@ -94,8 +95,9 @@ class Daemon():
             binding["action"](*binding["args"]) 
         '''
         for binding in self.bindings:
+            # if button down and if we find the right 
             if ((state == 1) and (code == binding["code"])):
-                print(binding["name"])
+                #print(binding["name"])
                 if binding["action"] == "modifier":
                     self.modifier_flag = True
                 else:
@@ -104,7 +106,7 @@ class Daemon():
                     else:
                         binding["modifier_action"](*binding["modifier_args"])
             elif ((state == 0) and (code == binding["code"])):
-                print(binding["name"])
+                #print(binding["name"])
                 if binding["action"] == "modifier":
                     self.modifier_flag = False
                 if "action_up" in binding.keys():
@@ -115,7 +117,7 @@ class Daemon():
     def dummy(self):
         pass
 
-    def send_click(self, method, button):
+    def send_click(self, button, method="click"):
         if method == "click":
             os.system("xdotool click "+button)
         elif method == "hold":
@@ -125,9 +127,14 @@ class Daemon():
         else:
             print("Daemon.send_click(): Incorrect method applied ->", method)
 
-    def send_keys(self, keys):
+    def send_keys(self, keys, method="once", delay="12"):
         print(keys)
-        os.system("xdotool key "+keys)
+        if method == "once":
+            os.system("xdotool key "+keys)
+        elif method == "hold":
+            os.system("xdotool keydown "+keys)
+        elif method == "release":
+            os.system("xdotool keyup "+keys)
 
     def handle_wiimote(self):
         evt = xwiimote.event()
